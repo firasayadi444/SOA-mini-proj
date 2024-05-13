@@ -1,47 +1,67 @@
 package com.example.miniprojetserviceweb.Controller;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import com.example.miniprojetserviceweb.Model.Enseignant;
 import com.example.miniprojetserviceweb.Repository.EnseignantRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RestController
-@RequestMapping("/api/enseignants")
+@RequestMapping("/enseignants")
 public class EnseignantController {
 
     @Autowired
     private EnseignantRepository enseignantRepository;
 
-    @GetMapping
-    public List<Enseignant> getAllEnseignants() {
-        return enseignantRepository.findAll();
+    @GetMapping("/all")
+    public ResponseEntity<List<Enseignant>> getAllEnseignants() {
+        List<Enseignant> enseignants = enseignantRepository.findAll();
+        if (!enseignants.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body(enseignants);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
-    @PostMapping
-    public Enseignant createEnseignant(@RequestBody Enseignant enseignant) {
-        return enseignantRepository.save(enseignant);
+    @PostMapping("/add")
+    public ResponseEntity<Enseignant> createEnseignant(@RequestBody Enseignant enseignant) {
+        Enseignant savedEnseignant = enseignantRepository.save(enseignant);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedEnseignant);
     }
 
-    @GetMapping("/{id}")
-    public Enseignant getEnseignantById(@PathVariable Long id) {
-        return enseignantRepository.findById(id).orElse(null);
-    }
-
-    @PutMapping("/{id}")
-    public Enseignant updateEnseignant(@PathVariable Long id, @RequestBody Enseignant enseignantDetails) {
+    @GetMapping("/get/{id}")
+    public ResponseEntity<Enseignant> getEnseignantById(@PathVariable Long id) {
         Enseignant enseignant = enseignantRepository.findById(id).orElse(null);
         if (enseignant != null) {
-            enseignant.setNom(enseignantDetails.getNom());
-            enseignant.setPrenom(enseignantDetails.getPrenom());
-            enseignant.setMatiere(enseignantDetails.getMatiere());
-            return enseignantRepository.save(enseignant);
+            return ResponseEntity.status(HttpStatus.OK).body(enseignant);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-        return null;
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteEnseignant(@PathVariable Long id) {
-        enseignantRepository.deleteById(id);
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Enseignant> updateEnseignant(@PathVariable Long id, @RequestBody Enseignant enseignantDetails) {
+        Enseignant existingEnseignant = enseignantRepository.findById(id).orElse(null);
+        if (existingEnseignant != null) {
+            existingEnseignant.setNom(enseignantDetails.getNom());
+            existingEnseignant.setPrenom(enseignantDetails.getPrenom());
+            existingEnseignant.setMatiere(enseignantDetails.getMatiere());
+            Enseignant updatedEnseignant = enseignantRepository.save(existingEnseignant);
+            return ResponseEntity.status(HttpStatus.OK).body(updatedEnseignant);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteEnseignant(@PathVariable Long id) {
+        if (enseignantRepository.existsById(id)) {
+            enseignantRepository.deleteById(id);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 }
